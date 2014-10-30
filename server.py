@@ -1,42 +1,38 @@
-+############################################################
-+# Dockerfile to build Python WSGI Application Containers
-+# Based on Ubuntu
-+############################################################
++# Import your application as:
++# from app import application
++# Example:
 +
-+# Set the base image to Ubuntu
-+FROM ubuntu:trusty
++from app import app
 +
-+# File Author / Maintainer
-+MAINTAINER Maintaner Name
++# Import CherryPy
++import cherrypy
 +
-+# Add the application resources URL
-+RUN echo "deb http://ie.archive.ubuntu.com/ubuntu/ trusty main universe" >> /etc/apt/sources.list
++if __name__ == '__main__':
 +
-+# Update the sources list
-+RUN apt-get update
++ # Mount the application
++ cherrypy.tree.graft(app, "/")
 +
-+# Install basic applications
-+RUN apt-get install -y tar git curl nano wget dialog net-tools build-essential
++ # Unsubscribe the default server
++ cherrypy.server.unsubscribe()
 +
-+# Install Python and Basic Python Tools
-+RUN apt-get install -y python python-dev python-distribute python-pip
++ # Instantiate a new server object
++ server = cherrypy._cpserver.Server()
 +
-+# Copy the application folder inside the container
-+ADD /my_application /my_application
++ # Configure the server object
++ server.socket_host = "0.0.0.0"
++ server.socket_port = 80
++ server.thread_pool = 30
 +
-+# Get pip to download and install requirements:
-+RUN pip install -r /my_application/requirements.txt
++ # For SSL Support
++ # server.ssl_module = 'pyopenssl'
++ # server.ssl_certificate = 'ssl/certificate.crt'
++ # server.ssl_private_key = 'ssl/private.key'
++ # server.ssl_certificate_chain = 'ssl/bundle.crt'
 +
-+# Expose ports
-+EXPOSE 80
++ # Subscribe this server
++ server.subscribe()
 +
-+RUN mkdir /my_application/uploads
++ # Start the server engine (Option 1 *and* 2)
 +
-+# Set the default directory where CMD will execute
-+WORKDIR /my_application
-+
-+# Set the default command to execute
-+# when creating a new container
-+# i.e. using CherryPy to serve the application
-+CMD python server.py
-+
++ cherrypy.engine.start()
++ cherrypy.engine.block()
